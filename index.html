@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ro">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Book Finder — Găsește cărți rapid</title>
+
+    <!-- Modern font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root{
+            --bg:#f4f8ff;
+            --card-bg:#ffffff;
+            --primary-900:#063b7a;
+            --primary-700:#0a58b3;
+            --primary-500:#2b82e6;
+            --muted:#6b7280;
+            --glass: rgba(255,255,255,0.6);
+            --radius:12px;
+            --shadow: 0 6px 18px rgba(7,20,50,0.08);
+            --accent-shadow: 0 10px 30px rgba(43,130,230,0.12);
+            --max-width:1100px;
+        }
+
+        html,body{
+            height:100%;
+            margin:0;
+            font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+            background: linear-gradient(180deg,var(--bg) 0%, #eef6ff 100%);
+            color:var(--primary-900);
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+        }
+
+        .container{
+            max-width:var(--max-width);
+            margin:48px auto;
+            padding:24px;
+        }
+
+        header{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:16px;
+            margin-bottom:28px;
+        }
+
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        .logo{
+            width:56px;
+            height:56px;
+            background:linear-gradient(135deg,var(--primary-700),var(--primary-500));
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:white;
+            font-weight:700;
+            border-radius:12px;
+            box-shadow: var(--accent-shadow);
+            flex-shrink:0;
+        }
+
+        h1{
+            font-size:20px;
+            margin:0;
+            line-height:1.05;
+        }
+
+        p.lead{
+            margin:0;
+            color:var(--muted);
+            font-size:13px;
+        }
+
+        /* Search area */
+        .search-card{
+            background:var(--card-bg);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            padding:18px;
+            display:flex;
+            gap:12px;
+            align-items:center;
+            margin-bottom:22px;
+            flex-wrap:wrap;
+        }
+
+        .search-form{
+            display:flex;
+            gap:12px;
+            flex:1 1 420px;
+            min-width:220px;
+            align-items:center;
+        }
+
+        .input-wrap{
+            flex:1;
+            position:relative;
+        }
+
+        input[type="search"]{
+            width:100%;
+            padding:12px 14px;
+            border-radius:10px;
+            border:1px solid #e6eefb;
+            background:linear-gradient(180deg, rgba(11,39,88,0.02), transparent);
+            outline:none;
+            font-size:15px;
+            transition:box-shadow .18s, transform .08s, border-color .12s;
+        }
+
+        input[type="search"]:focus{
+            box-shadow:0 6px 18px rgba(43,130,230,0.12);
+            border-color:var(--primary-500);
+            transform:translateY(-1px);
+        }
+
+        .btn{
+            background:linear-gradient(180deg,var(--primary-700),var(--primary-500));
+            color:white;
+            border:none;
+            padding:10px 14px;
+            border-radius:10px;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow: var(--accent-shadow);
+            transition:transform .12s, box-shadow .12s, opacity .12s;
+        }
+
+        .btn:active{ transform:translateY(1px); }
+        .btn:disabled{ opacity:.6; cursor:default; box-shadow:none; }
+
+        .options{
+            display:flex;
+            gap:8px;
+            align-items:center;
+            color:var(--muted);
+            font-size:13px;
+        }
+
+        /* Results */
+        .results{
+            margin-top:10px;
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap:18px;
+        }
+
+        .card{
+            background:var(--card-bg);
+            border-radius:12px;
+            box-shadow:var(--shadow);
+            overflow:hidden;
+            display:flex;
+            flex-direction:column;
+            transition:transform .18s, box-shadow .18s;
+            min-height:140px;
+        }
+
+        .card:hover{
+            transform:translateY(-6px);
+            box-shadow: 0 18px 40px rgba(7,20,50,0.12);
+        }
+
+        .cover{
+            height:0;
+            padding-top:150%;
+            background-size:cover;
+            background-position:center;
+            flex:0 0 auto;
+            position:relative;
+        }
+
+        .cover img{
+            position:absolute;
+            inset:0;
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            display:block;
+            transition:opacity .25s ease, transform .35s ease;
+            opacity:0;
+            transform:scale(1.03);
+        }
+
+        .cover img.loaded{ opacity:1; transform:none; }
+
+        .card-body{
+            padding:12px 14px;
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+            flex:1 1 auto;
+        }
+
+        .title{
+            font-weight:600;
+            font-size:15px;
+            line-height:1.18;
+            color:var(--primary-900);
+        }
+
+        .author{
+            font-size:13px;
+            color:var(--muted);
+        }
+
+        .meta{
+            margin-top:auto;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:8px;
+            font-size:12px;
+            color:var(--muted);
+        }
+
+        a.openlink{
+            color:var(--primary-700);
+            text-decoration:none;
+            font-weight:600;
+            font-size:13px;
+        }
+
+        /* Empty / error states */
+        .empty{
+            padding:32px;
+            text-align:center;
+            color:var(--muted);
+            border-radius:10px;
+            background:linear-gradient(180deg, rgba(11,39,88,0.02), transparent);
+            box-shadow:var(--shadow);
+        }
+
+        /* Loader */
+        .loader{
+            display:inline-block;
+            width:20px;
+            height:20px;
+            border-radius:50%;
+            border:3px solid rgba(255,255,255,0.18);
+            border-top-color:rgba(255,255,255,0.9);
+            animation:spin 1s linear infinite;
+            margin-left:8px;
+        }
+
+        @keyframes spin{ to{ transform:rotate(360deg); } }
+
+        /* Responsive tweaks */
+        @media (max-width:640px){
+            header{ flex-direction:column; align-items:flex-start; gap:12px; }
+            .search-card{ padding:14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand" aria-hidden="false">
+                <div class="logo" aria-hidden="true">BF</div>
+                <div>
+                    <h1>Book Finder</h1>
+                    <p class="lead">Caută cărți după titlu, autor sau subiect — rapid și simplu.</p>
+                </div>
+            </div>
+            <div style="text-align:right; color:var(--muted); font-size:13px;">
+                Date preluate de la Open Library
+            </div>
+        </header>
+
+        <section class="search-card" aria-labelledby="search-heading">
+            <form id="searchForm" class="search-form" role="search" aria-label="Caută cărți">
+                <label for="q" class="visually-hidden" style="display:none">Cuvânt cheie</label>
+                <div class="input-wrap">
+                    <input id="q" name="q" type="search" placeholder="Titlu, autor sau subiect..." autocomplete="off" required />
+                </div>
+
+                <button type="submit" id="searchBtn" class="btn">Caută</button>
+            </form>
+
+            <div class="options" aria-hidden="true">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="opacity:.9"><path d="M21 21l-4.35-4.35" stroke="#0a58b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#0a58b3" stroke-width="2"/></svg>
+                    <span style="font-size:13px; color:var(--muted)">Rezultate relevante</span>
+                </span>
+            </div>
+        </section>
+
+        <main>
+            <div id="status" aria-live="polite" style="min-height:1.2em; margin-bottom:10px;"></div>
+            <section id="results" class="results" aria-live="polite" aria-label="Rezultate căutare"></section>
+
+            <div id="empty" class="empty" style="display:none; margin-top:16px;">
+                Introdu un cuvânt cheie și apasă "Caută" pentru a începe.
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // GitHub Copilot
+        (function(){
+            const form = document.getElementById('searchForm');
+            const qInput = document.getElementById('q');
+            const resultsEl = document.getElementById('results');
+            const statusEl = document.getElementById('status');
+            const emptyEl = document.getElementById('empty');
+            const btn = document.getElementById('searchBtn');
+
+            const PLACEHOLDER_COVER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="960" viewBox="0 0 8 12">' +
+                '<rect width="8" height="12" fill="%23e6f0ff"/>' +
+                '<text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="0.9" fill="%23063b7a">No Cover</text>' +
+                '</svg>'
+            );
+
+            function clearResults(){
+                resultsEl.innerHTML = '';
+            }
+
+            function setStatus(msg, busy=false){
+                statusEl.textContent = msg || '';
+                if(busy){
+                    const loader = document.createElement('span');
+                    loader.className = 'loader';
+                    statusEl.appendChild(loader);
+                }
+            }
+
+            function showEmpty(message){
+                emptyEl.style.display = 'block';
+                emptyEl.textContent = message;
+            }
+
+            function hideEmpty(){
+                emptyEl.style.display = 'none';
+            }
+
+            function buildCard(doc){
+                const wrapper = document.createElement('article');
+                wrapper.className = 'card';
+
+                const coverDiv = document.createElement('div');
+                coverDiv.className = 'cover';
+
+                const img = document.createElement('img');
+                img.alt = doc.title || 'Copertă carte';
+                const coverId = doc.cover_i;
+                if(coverId){
+                    img.src = `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`;
+                } else if (doc.isbn && doc.isbn[0]) {
+                    // try by ISBN
+                    img.src = `https://covers.openlibrary.org/b/isbn/${encodeURIComponent(doc.isbn[0])}-L.jpg`;
+                } else {
+                    img.src = PLACEHOLDER_COVER;
+                }
+
+                // fade in when loaded, if remote fails fallback to placeholder
+                img.addEventListener('load', ()=> img.classList.add('loaded'));
+                img.addEventListener('error', ()=> {
+                    if(img.src !== PLACEHOLDER_COVER) img.src = PLACEHOLDER_COVER;
+                });
+
+                coverDiv.appendChild(img);
+                wrapper.appendChild(coverDiv);
+
+                const body = document.createElement('div');
+                body.className = 'card-body';
+
+                const title = document.createElement('div');
+                title.className = 'title';
+                title.textContent = doc.title || 'Titlu necunoscut';
+
+                const author = document.createElement('div');
+                author.className = 'author';
+                author.textContent = (doc.author_name && doc.author_name.join(', ')) || 'Autor necunoscut';
+
+                const meta = document.createElement('div');
+                meta.className = 'meta';
+
+                const year = document.createElement('div');
+                year.textContent = doc.first_publish_year ? `An: ${doc.first_publish_year}` : '';
+
+                const link = document.createElement('a');
+                link.className = 'openlink';
+                link.textContent = 'Detalii';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                // prefer work key if available, otherwise OL id
+                const key = doc.key || (doc.edition_key && ('/books/' + doc.edition_key[0]));
+                link.href = key ? ('https://openlibrary.org' + key) : '#';
+
+                meta.appendChild(year);
+                meta.appendChild(link);
+
+                body.appendChild(title);
+                body.appendChild(author);
+                body.appendChild(meta);
+
+                wrapper.appendChild(body);
+
+                return wrapper;
+            }
+
+            async function searchBooks(query){
+                clearResults();
+                hideEmpty();
+                setStatus('Se caută rezultate...', true);
+                btn.disabled = true;
+                try{
+                    const url = 'https://openlibrary.org/search.json?q=' + encodeURIComponent(query) + '&limit=24';
+                    const res = await fetch(url);
+                    if(!res.ok) throw new Error('Răspuns server: ' + res.status);
+                    const data = await res.json();
+                    const docs = data.docs || [];
+                    if(docs.length === 0){
+                        setStatus('');
+                        showEmpty('Nu s-au găsit rezultate pentru: "' + query + '". Încearcă alt cuvânt cheie.');
+                        return;
+                    }
+                    setStatus(`Afișare ${docs.length} rezultate pentru "${query}"`);
+                    const fragment = document.createDocumentFragment();
+                    docs.forEach(d => fragment.appendChild(buildCard(d)));
+                    resultsEl.appendChild(fragment);
+                } catch(err){
+                    clearResults();
+                    showEmpty('A apărut o eroare la încărcare. Verifică conexiunea și încearcă din nou.');
+                    setStatus('Eroare: ' + (err.message || err));
+                    console.error(err);
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+
+            // handle submit
+            form.addEventListener('submit', (e)=>{
+                e.preventDefault();
+                const q = qInput.value.trim();
+                if(!q) {
+                    showEmpty('Introdu un cuvânt cheie pentru a căuta cărți.');
+                    return;
+                }
+                searchBooks(q);
+            });
+
+            // support Enter on input (form already handles) and clear initial empty message on focus
+            qInput.addEventListener('focus', ()=> {
+                hideEmpty();
+                setStatus('');
+            });
+
+            // small accessibility: announce when results change is done via aria-live region already
+            // show initial hint
+            showEmpty('Introdu un cuvânt cheie și apasă "Caută" pentru a începe.');
+        })();
+    </script>
+</body>
+</html></span>
